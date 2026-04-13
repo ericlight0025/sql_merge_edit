@@ -1,0 +1,45 @@
+{
+  "main_sql": "policy_main.sql",
+  "joins": [
+    {
+      "sql_file": "customer_profile.sql",
+      "join_type": "LEFT",
+      "conditions": [
+        {
+          "main_column": "customer_id",
+          "other_column": "customer_id"
+        }
+      ]
+    },
+    {
+      "sql_file": "risk_summary.sql",
+      "join_type": "LEFT",
+      "conditions": [
+        {
+          "main_column": "policy_id",
+          "other_column": "policy_id"
+        }
+      ]
+    },
+    {
+      "sql_file": "claim_summary.sql",
+      "join_type": "LEFT",
+      "conditions": [
+        {
+          "main_column": "policy_id",
+          "other_column": "policy_id"
+        }
+      ]
+    },
+    {
+      "sql_file": "change_summary.sql",
+      "join_type": "LEFT",
+      "conditions": [
+        {
+          "main_column": "policy_id",
+          "other_column": "policy_id"
+        }
+      ]
+    }
+  ]
+}
