@@ -2,7 +2,3 @@ __pycache__/
 *.pyc
 
 tests/_artifacts/
-sample_data/demo.sqlite
-merged_output.sql
-output_columns.xlsx
-join_conditions.xlsx
