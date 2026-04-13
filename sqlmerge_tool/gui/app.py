@@ -73,7 +73,7 @@ class SqlMergeApp:
 
         self._configure_theme()
         self._build_layout()
-        self._load_sample_bundle()
+        self._sync_sql_controls()
 
     def _configure_theme(self) -> None:
         """設定 dark mode 主題樣式。"""
