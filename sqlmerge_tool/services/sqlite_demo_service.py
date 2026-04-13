@@ -63,9 +63,9 @@ def seed_demo_database(db_path: Path) -> Path:
         connection.executemany(
             "INSERT INTO customers (customer_id, customer_name, city) VALUES (?, ?, ?)",
             [
-                (1, "王小明", "Taipei"),
-                (2, "陳美玲", "Taichung"),
-                (3, "林大華", "Tainan"),
+                (1, "Demo Customer A", "Taipei"),
+                (2, "Demo Customer B", "Taichung"),
+                (3, "Demo Customer C", "Tainan"),
             ],
         )
         connection.executemany(

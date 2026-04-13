@@ -1,3 +1,56 @@
+## 快速開始
+
+### 1. 進入專案目錄
+
+```bash
+cd C:\DevWorkspace\codexcli\sqlmergeTool
+```
+
+### 2. 啟動 GUI
+
+如果 `python` 已經指向可用的 Python 3.12：
+
+```bash
+python main.py
+```
+
+如果你的環境沒有正確設定 `python`，可直接指定完整路徑：
+
+```bash
+C:\Users\javalight\AppData\Local\Programs\Python\Python312\python.exe main.py
+```
+
+### 3. GUI 最短操作流程
+
+1. `建立示範 SQLite`
+2. `讀取 SQL 欄位`
+3. 在 `工作區` 設定 `Join 規格`
+4. 在 `輸出欄位` 設定最後欄位順序 / 中文 `AS`
+5. `產生合併 SQL`
+6. `驗證合併 SQL`
+
+### 4. 專案目前不需要額外安裝套件
+
+本專案目前只使用 Python 內建模組。
+
+可參考：
+
+- `requirements.txt`
+- `sample_data/demo.sqlite`
+- `merged_output.sql`
+- `output_columns.xlsx`
+- `join_conditions.xlsx`
+
+### 5. 可直接測試的檔案
+
+- Demo SQLite：`sample_data/demo.sqlite`
+- Sample SQL：`sample_data/sample_sql/*.sql`
+- 輸出欄位 Excel 範本：`output_columns.xlsx`
+- Join 規格 Excel 範本：`join_conditions.xlsx`
+- 測試產物：`tests/_artifacts/`
+
+---
+
 可以。
 但先講白：
 

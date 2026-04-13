@@ -64,7 +64,7 @@ class SqliteDemoExecutionTestCase(unittest.TestCase):
         self.assertEqual(len(merged_rows), 3)
 
         rows_by_policy_number = {row["policy_number"]: row for row in merged_rows}
-        self.assertEqual(rows_by_policy_number["P-001"]["customer_name"], "王小明")
+        self.assertEqual(rows_by_policy_number["P-001"]["customer_name"], "Demo Customer A")
         self.assertEqual(rows_by_policy_number["P-001"]["risk_count"], 2)
         self.assertEqual(rows_by_policy_number["P-001"]["highest_risk_level"], 4)
         self.assertEqual(rows_by_policy_number["P-002"]["claim_count"], 2)
