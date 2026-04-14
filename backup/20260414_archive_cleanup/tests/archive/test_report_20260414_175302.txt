@@ -1,0 +1,10 @@
+Timestamp: 2026-04-14T17:53:02
+Python: C:\DevWorkspace\googletts_package_shorts_venv\Scripts\python.exe
+Command: -m unittest discover -s tests -p test_*.py -q
+Return code: 0
+
+Output:
+----------------------------------------------------------------------
+Ran 12 tests in 0.233s
+
+OK

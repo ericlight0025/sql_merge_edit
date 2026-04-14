@@ -7,6 +7,22 @@ from pathlib import Path
 
 from sqlmerge_tool.models import JoinCondition, JoinSpec, MergeSpec, OutputColumnSpec
 
+try:
+    import sqlglot
+    from sqlglot.errors import ParseError
+except Exception:  # pragma: no cover - optional dependency
+    sqlglot = None
+    ParseError = Exception
+
+
+class SqlValidationError(Exception):
+    """Raised when SQL syntax validation fails (sqlglot).
+
+    This allows callers to present a short, user-friendly message while
+    preserving the underlying exception for debugging.
+    """
+    pass
+
 
 def load_merge_spec(spec_path: Path) -> MergeSpec:
     """從 JSON 載入合併規格。"""
@@ -108,8 +124,25 @@ def validate_merge_spec(spec: MergeSpec, sql_paths: list[Path]) -> None:
         if not any(column.enabled for column in spec.output_columns):
             raise ValueError("至少要勾選一個最終輸出欄位。")
 
-        for column in spec.output_columns:
-            if column.source_sql not in file_names:
-                raise ValueError(f"輸出欄位來源 SQL 不在已選檔案內: {column.source_sql}")
-            if not column.column_name.strip():
-                raise ValueError("輸出欄位名稱不可為空白。")
+    for column in spec.output_columns:
+        if column.source_sql not in file_names:
+            raise ValueError(f"輸出欄位來源 SQL 不在已選檔案內: {column.source_sql}")
+        if not column.column_name.strip():
+            raise ValueError("輸出欄位名稱不可為空白。")
+
+
+def validate_sql_syntax_sqlglot(sql_text: str) -> None:
+    """Use sqlglot to validate merged SQL syntax for SQLite dialect.
+
+    Raises a ValueError with the parse error message when parsing fails.
+    If sqlglot is not installed, this is a no-op.
+    """
+    if sqlglot is None:
+        # Optional dependency not installed; skip strict validation.
+        return
+    try:
+        # parse_one can raise ParseError on invalid syntax
+        sqlglot.parse_one(sql_text, read="sqlite")
+    except ParseError as e:
+        # Raise a specific exception so callers can display a concise message
+        raise SqlValidationError(str(e)) from e

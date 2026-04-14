@@ -1,0 +1,24 @@
+Backup timestamp: 2026-04-14 18:03:47 Moved count: 23 Moved items:
+- sqlmerge_tool\__pycache__\__init__.cpython-311.pyc
+- sqlmerge_tool\__pycache__\__init__.cpython-312.pyc
+- sqlmerge_tool\__pycache__\cli.cpython-312.pyc
+- sqlmerge_tool\__pycache__\logging_config.cpython-312.pyc
+- sqlmerge_tool\__pycache__\models.cpython-311.pyc
+- sqlmerge_tool\__pycache__\models.cpython-312.pyc
+- sqlmerge_tool\gui\__pycache__\__init__.cpython-312.pyc
+- sqlmerge_tool\gui\__pycache__\app.cpython-312.pyc
+- sqlmerge_tool\services\__pycache__\__init__.cpython-311.pyc
+- sqlmerge_tool\services\__pycache__\__init__.cpython-312.pyc
+- sqlmerge_tool\services\__pycache__\excel_config_service.cpython-311.pyc
+- sqlmerge_tool\services\__pycache__\excel_config_service.cpython-312.pyc
+- sqlmerge_tool\services\__pycache__\sql_merge_service.cpython-311.pyc
+- sqlmerge_tool\services\__pycache__\sql_merge_service.cpython-312.pyc
+- sqlmerge_tool\services\__pycache__\sqlite_demo_service.cpython-311.pyc
+- sqlmerge_tool\services\__pycache__\sqlite_demo_service.cpython-312.pyc
+- sqlmerge_tool\services\__pycache__\validation_service.cpython-311.pyc
+- sqlmerge_tool\services\__pycache__\validation_service.cpython-312.pyc
+- tests\__pycache__\test_excel_config_service.cpython-311.pyc
+- tests\__pycache__\test_sql_merge_service.cpython-311.pyc
+- tests\__pycache__\test_sqlite_demo_execution.cpython-311.pyc
+- tests\archive\test_report_20260414_175438.txt
+- tests\archive\test_report_20260414_175634.txt

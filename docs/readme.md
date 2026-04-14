@@ -49,6 +49,20 @@ C:\Users\javalight\AppData\Local\Programs\Python\Python312\python.exe main.py
 - Join 規格 Excel 範本：`join_conditions.xlsx`
 - 測試產物：`tests/_artifacts/`
 
+### 6. 固定用指定 venv 執行測試
+
+若你要固定使用這個環境：
+
+```bash
+C:\DevWorkspace\googletts_package_shorts_venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -q
+```
+
+或直接執行專案內的一鍵測試腳本：
+
+```bash
+C:\DevWorkspace\googletts_package_shorts_venv\Scripts\python.exe run_tests.py
+```
+
 ---
 
 可以。

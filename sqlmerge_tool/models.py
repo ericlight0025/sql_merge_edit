@@ -48,6 +48,7 @@ class CteDefinition:
 
     original_name: str
     renamed_name: str
+    column_list_sql: str | None
     body_sql: str
 
 

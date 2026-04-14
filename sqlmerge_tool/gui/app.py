@@ -23,6 +23,7 @@ from sqlmerge_tool.services.sqlite_demo_service import (
     seed_demo_database,
 )
 from sqlmerge_tool.services.validation_service import load_merge_spec, save_merge_spec
+from sqlmerge_tool.gui.theme import configure_theme
 
 
 class SqlMergeApp:
@@ -71,167 +72,11 @@ class SqlMergeApp:
         self.status_var = tk.StringVar(value="尚未載入 SQL。")
         self.sql_count_var = tk.StringVar(value="0 files")
 
-        self._configure_theme()
+        # apply theme from centralized module
+        configure_theme(self)
         self._build_layout()
         self._sync_sql_controls()
-
-    def _configure_theme(self) -> None:
-        """設定 dark mode 主題樣式。"""
-        self.root.configure(bg=self.BG)
-
-        default_font = ("Microsoft JhengHei UI", 10)
-        heading_font = ("Microsoft JhengHei UI Semibold", 11)
-        hero_font = ("Microsoft JhengHei UI Semibold", 22)
-        mono_font = ("Consolas", 10)
-
-        self.default_font = default_font
-        self.heading_font = heading_font
-        self.hero_font = hero_font
-        self.mono_font = mono_font
-
-        style = ttk.Style()
-        style.theme_use("clam")
-
-        style.configure(".", background=self.BG, foreground=self.TEXT, font=default_font)
-        style.configure("App.TFrame", background=self.BG)
-        style.configure("Panel.TFrame", background=self.SURFACE)
-        style.configure("Header.TFrame", background=self.SURFACE_ALT)
-        style.configure("Card.TFrame", background=self.SURFACE)
-        style.configure("CardInner.TFrame", background=self.PANEL)
-        style.configure("App.TNotebook", background=self.BG, borderwidth=0, tabmargins=(0, 8, 0, 0))
-        style.configure(
-            "App.TNotebook.Tab",
-            background=self.SURFACE_ALT,
-            foreground=self.MUTED,
-            padding=(18, 10),
-            borderwidth=0,
-        )
-        style.map(
-            "App.TNotebook.Tab",
-            background=[("selected", self.SURFACE), ("active", "#20304d")],
-            foreground=[("selected", self.TEXT), ("active", self.TEXT)],
-        )
-
-        style.configure(
-            "Title.TLabel",
-            background=self.SURFACE_ALT,
-            foreground=self.TEXT,
-            font=hero_font,
-        )
-        style.configure(
-            "Subtitle.TLabel",
-            background=self.SURFACE_ALT,
-            foreground=self.MUTED,
-            font=("Microsoft JhengHei UI", 10),
-        )
-        style.configure(
-            "Section.TLabel",
-            background=self.SURFACE,
-            foreground=self.TEXT,
-            font=heading_font,
-        )
-        style.configure(
-            "Body.TLabel",
-            background=self.SURFACE,
-            foreground=self.MUTED,
-        )
-        style.configure(
-            "Field.TLabel",
-            background=self.PANEL,
-            foreground=self.MUTED,
-        )
-        style.configure(
-            "Status.TLabel",
-            background=self.SURFACE_ALT,
-            foreground=self.TEXT,
-            font=("Microsoft JhengHei UI", 10),
-        )
-        style.configure(
-            "Count.TLabel",
-            background=self.SURFACE,
-            foreground=self.ACCENT,
-            font=("Consolas", 10, "bold"),
-        )
-
-        style.configure(
-            "TEntry",
-            fieldbackground=self.INPUT_BG,
-            foreground=self.TEXT,
-            bordercolor=self.INPUT_BORDER,
-            lightcolor=self.INPUT_BORDER,
-            darkcolor=self.INPUT_BORDER,
-            insertcolor=self.TEXT,
-            padding=8,
-        )
-        style.map(
-            "TEntry",
-            bordercolor=[("focus", self.ACCENT)],
-            lightcolor=[("focus", self.ACCENT)],
-            darkcolor=[("focus", self.ACCENT)],
-        )
-
-        style.configure(
-            "TCombobox",
-            fieldbackground=self.INPUT_BG,
-            foreground=self.TEXT,
-            bordercolor=self.INPUT_BORDER,
-            lightcolor=self.INPUT_BORDER,
-            darkcolor=self.INPUT_BORDER,
-            arrowsize=16,
-            padding=6,
-        )
-        style.map(
-            "TCombobox",
-            fieldbackground=[("readonly", self.INPUT_BG)],
-            foreground=[("readonly", self.TEXT)],
-            bordercolor=[("focus", self.ACCENT)],
-            lightcolor=[("focus", self.ACCENT)],
-            darkcolor=[("focus", self.ACCENT)],
-        )
-
-        style.configure(
-            "Accent.TButton",
-            background=self.ACCENT,
-            foreground="#071217",
-            bordercolor=self.ACCENT,
-            lightcolor=self.ACCENT,
-            darkcolor=self.ACCENT,
-            padding=(14, 8),
-            font=("Microsoft JhengHei UI Semibold", 10),
-        )
-        style.map(
-            "Accent.TButton",
-            background=[("active", "#73eed1"), ("pressed", "#3fc8ac")],
-            foreground=[("disabled", "#34525e")],
-        )
-
-        style.configure(
-            "Ghost.TButton",
-            background=self.SURFACE_ALT,
-            foreground=self.TEXT,
-            bordercolor=self.BORDER,
-            lightcolor=self.BORDER,
-            darkcolor=self.BORDER,
-            padding=(12, 8),
-        )
-        style.map(
-            "Ghost.TButton",
-            background=[("active", "#20304d"), ("pressed", "#18253c")],
-        )
-
-        style.configure(
-            "Warn.TButton",
-            background="#342515",
-            foreground=self.WARNING,
-            bordercolor="#5c4426",
-            lightcolor="#5c4426",
-            darkcolor="#5c4426",
-            padding=(12, 8),
-        )
-        style.map(
-            "Warn.TButton",
-            background=[("active", "#48331d"), ("pressed", "#2e2113")],
-        )
+    
 
     def _build_layout(self) -> None:
         """建立 GUI 元件。"""

@@ -7,6 +7,8 @@ from pathlib import Path
 
 from sqlmerge_tool.models import CteDefinition, MergeSpec, OutputColumnSpec, ParsedSqlModule
 from sqlmerge_tool.services.validation_service import validate_merge_spec
+from sqlmerge_tool.services.validation_service import validate_sql_syntax_sqlglot, SqlValidationError
+from sqlmerge_tool.services.validation_service import validate_sql_syntax_sqlglot
 
 
 _IDENTIFIER_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
@@ -120,7 +122,9 @@ def consume_balanced_parentheses(sql_text: str, start_index: int) -> tuple[str, 
     raise ValueError("SQL 括號未正確配對。")
 
 
-def extract_top_level_with(sql_text: str) -> tuple[list[tuple[str, str]], str, bool]:
+def extract_top_level_with(
+    sql_text: str,
+) -> tuple[list[tuple[str, str | None, str]], str, bool]:
     """抽出最外層 WITH 的 CTE 與最終 SELECT 主體。"""
     normalized_sql = sql_text.strip()
     index = skip_space_and_comments(normalized_sql, 0)
@@ -134,14 +138,15 @@ def extract_top_level_with(sql_text: str) -> tuple[list[tuple[str, str]], str, b
         uses_recursive = True
         index += len("RECURSIVE")
 
-    ctes: list[tuple[str, str]] = []
+    ctes: list[tuple[str, str | None, str]] = []
     while True:
         index = skip_space_and_comments(normalized_sql, index)
         cte_name, index = parse_identifier(normalized_sql, index)
         index = skip_space_and_comments(normalized_sql, index)
 
+        column_list_sql: str | None = None
         if index < len(normalized_sql) and normalized_sql[index] == "(":
-            _, index = consume_balanced_parentheses(normalized_sql, index)
+            column_list_sql, index = consume_balanced_parentheses(normalized_sql, index)
             index = skip_space_and_comments(normalized_sql, index)
 
         if not keyword_at(normalized_sql, index, "AS"):
@@ -155,7 +160,7 @@ def extract_top_level_with(sql_text: str) -> tuple[list[tuple[str, str]], str, b
             index,
         )
         cte_body = cte_body_with_parentheses[1:-1].strip()
-        ctes.append((cte_name, cte_body))
+        ctes.append((cte_name, column_list_sql, cte_body))
 
         index = skip_space_and_comments(normalized_sql, index)
         if index < len(normalized_sql) and normalized_sql[index] == ",":
@@ -169,59 +174,43 @@ def extract_top_level_with(sql_text: str) -> tuple[list[tuple[str, str]], str, b
 
 
 def replace_identifiers(sql_text: str, mapping: dict[str, str]) -> str:
-    """只在一般識別字位置替換名稱，避免改壞字串與註解。"""
+    """Replace identifiers outside of strings/comments using a regex-based approach.
+
+    This implementation splits the SQL into segments (strings, line comments,
+    block comments) and only runs identifier replacement on the "other" segments.
+    It's significantly faster and simpler than character-by-character parsing.
+    """
     if not mapping:
         return sql_text
 
     lower_mapping = {key.lower(): value for key, value in mapping.items()}
-    result: list[str] = []
-    index = 0
-    length = len(sql_text)
 
-    while index < length:
-        if sql_text.startswith("--", index):
-            line_break = sql_text.find("\n", index)
-            if line_break == -1:
-                result.append(sql_text[index:])
-                break
-            result.append(sql_text[index : line_break + 1])
-            index = line_break + 1
-            continue
+    # Pattern matches: single-quoted strings, double-quoted strings,
+    # line comments (--...), and block comments (/* ... */).
+    token_re = re.compile(r"('(?:''|[^'])*')|\"(?:\"\"|[^\"])*\"|(--[^\n]*\n?)|(/\*.*?\*/)", re.S)
 
-        if sql_text.startswith("/*", index):
-            block_end = sql_text.find("*/", index + 2)
-            if block_end == -1:
-                raise ValueError("SQL 區塊註解未正確結束。")
-            result.append(sql_text[index : block_end + 2])
-            index = block_end + 2
-            continue
+    def replace_in_chunk(chunk: str) -> str:
+        # replace identifiers in a chunk of SQL that's not a string/comment
+        def id_replacer(m: re.Match) -> str:
+            token = m.group(0)
+            return lower_mapping.get(token.lower(), token)
 
-        char = sql_text[index]
-        if char in ("'", '"'):
-            quote = char
-            start = index
-            index += 1
-            while index < length:
-                if sql_text[index] == quote:
-                    if index + 1 < length and sql_text[index + 1] == quote:
-                        index += 2
-                        continue
-                    index += 1
-                    break
-                index += 1
-            result.append(sql_text[start:index])
-            continue
+        return _IDENTIFIER_PATTERN.sub(id_replacer, chunk)
 
-        if char.isalpha() or char == "_":
-            token, next_index = parse_identifier(sql_text, index)
-            result.append(lower_mapping.get(token.lower(), token))
-            index = next_index
-            continue
+    parts: list[str] = []
+    last_end = 0
+    for m in token_re.finditer(sql_text):
+        # process between last_end and m.start()
+        if m.start() > last_end:
+            parts.append(replace_in_chunk(sql_text[last_end : m.start()]))
+        # append the matched token (string/comment) unchanged
+        parts.append(m.group(0))
+        last_end = m.end()
 
-        result.append(char)
-        index += 1
+    if last_end < len(sql_text):
+        parts.append(replace_in_chunk(sql_text[last_end :]))
 
-    return "".join(result)
+    return "".join(parts)
 
 
 def parse_sql_module(sql_path: Path) -> ParsedSqlModule:
@@ -232,16 +221,17 @@ def parse_sql_module(sql_path: Path) -> ParsedSqlModule:
 
     rename_map = {
         original_name: f"{module_name}__{sanitize_name(original_name)}"
-        for original_name, _ in ctes
+        for original_name, _column_list_sql, _body_sql in ctes
     }
 
     renamed_ctes = [
         CteDefinition(
             original_name=original_name,
             renamed_name=rename_map[original_name],
+            column_list_sql=column_list_sql,
             body_sql=replace_identifiers(body_sql, rename_map),
         )
-        for original_name, body_sql in ctes
+        for original_name, column_list_sql, body_sql in ctes
     ]
 
     final_select_sql = replace_identifiers(final_select_sql, rename_map)
@@ -276,7 +266,7 @@ def merge_sql_files(sql_paths: list[Path], spec: MergeSpec) -> str:
         cte_clauses.extend(
             [
                 (
-                    f"{cte.renamed_name} AS (\n"
+                    f"{cte.renamed_name}{cte.column_list_sql or ''} AS (\n"
                     f"{indent_sql(cte.body_sql)}\n"
                     f")"
                 )
@@ -320,7 +310,15 @@ def merge_sql_files(sql_paths: list[Path], spec: MergeSpec) -> str:
         f"FROM {main_module.result_cte_name} AS main_src",
     ]
     sql_parts.extend(join_lines)
-    return "\n".join(sql_parts).strip() + ";\n"
+    merged = "\n".join(sql_parts).strip() + ";\n"
+    # strict syntax check using sqlglot (optional)
+    try:
+        validate_sql_syntax_sqlglot(merged)
+    except SqlValidationError as e:
+        # Provide a short, user-friendly error while preserving original exception
+        short_msg = str(e).splitlines()[0] if str(e) else "未知的語法錯誤"
+        raise ValueError(f"SQL 語法檢查失敗: {short_msg}") from e
+    return merged
 
 
 def build_select_items(

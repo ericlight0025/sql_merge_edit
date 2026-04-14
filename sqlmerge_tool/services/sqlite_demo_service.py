@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+from contextlib import contextmanager
 
 
 SCHEMA_SQL = """
@@ -57,8 +58,7 @@ CREATE TABLE claims (
 def seed_demo_database(db_path: Path) -> Path:
     """建立 5 張 table 並塞入可驗證的示範資料。"""
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(db_path)
-    try:
+    with sqlite_connection(db_path) as connection:
         connection.executescript(SCHEMA_SQL)
         connection.executemany(
             "INSERT INTO customers (customer_id, customer_name, city) VALUES (?, ?, ?)",
@@ -131,22 +131,16 @@ def seed_demo_database(db_path: Path) -> Path:
             ],
         )
         connection.commit()
-    finally:
-        connection.close()
     return db_path
 
 
 def execute_sql(db_path: Path, sql_text: str) -> tuple[list[str], list[sqlite3.Row]]:
     """執行 SQL 並回傳欄位名稱與資料列。"""
-    connection = sqlite3.connect(db_path)
-    connection.row_factory = sqlite3.Row
-    try:
+    with sqlite_connection(db_path) as connection:
         cursor = connection.execute(sql_text)
         rows = cursor.fetchall()
         columns = [column[0] for column in cursor.description or []]
         return columns, rows
-    finally:
-        connection.close()
 
 
 def execute_sql_file(db_path: Path, sql_path: Path) -> tuple[list[str], list[sqlite3.Row]]:
@@ -156,14 +150,26 @@ def execute_sql_file(db_path: Path, sql_path: Path) -> tuple[list[str], list[sql
 
 def describe_sql_columns(db_path: Path, sql_text: str) -> list[str]:
     """讀取 SQL 最終輸出的欄位名稱，而不是底層 table schema。"""
-    connection = sqlite3.connect(db_path)
-    try:
+    with sqlite_connection(db_path) as connection:
         cursor = connection.execute(sql_text.strip().rstrip(";"))
         return [column[0] for column in cursor.description or []]
-    finally:
-        connection.close()
 
 
 def describe_sql_file_columns(db_path: Path, sql_path: Path) -> list[str]:
     """直接讀取 .sql 檔的輸出欄位名稱。"""
     return describe_sql_columns(db_path, sql_path.read_text(encoding="utf-8"))
+
+
+@contextmanager
+def sqlite_connection(db_path: Path):
+    """Context manager for sqlite connections used across the demo service.
+
+    Ensures row_factory is set and connection is closed after use.
+    """
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
