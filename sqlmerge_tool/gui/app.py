@@ -22,7 +22,12 @@ from sqlmerge_tool.services.sqlite_demo_service import (
     execute_sql,
     seed_demo_database,
 )
-from sqlmerge_tool.services.validation_service import load_merge_spec, save_merge_spec
+from sqlmerge_tool.services.validation_service import (
+    load_merge_spec,
+    save_merge_spec,
+    validate_columns_against_schema,
+)
+from sqlmerge_tool.services.workspace_service import WorkspaceState, load_workspace, save_workspace
 from sqlmerge_tool.gui.theme import configure_theme
 
 
@@ -116,21 +121,29 @@ class SqlMergeApp:
 
         tk.Frame(toolbar, bg=self.BORDER, width=1).pack(side="left", fill="y", padx=16, pady=6)
 
-        # ── 群組 2：規格 / 資料庫 ────────────────────────────────────────
+        # ── 群組 2：工作區 / 規格 ────────────────────────────────────────
         g2 = ttk.Frame(toolbar, style="App.TFrame")
         g2.pack(side="left")
+        ttk.Button(g2, text="載入工作區", command=self._load_workspace_file, style="Ghost.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(g2, text="儲存工作區", command=self._save_workspace_file, style="Ghost.TButton").pack(side="left", padx=(0, 6))
         ttk.Button(g2, text="載入規格", command=self._load_spec_file, style="Ghost.TButton").pack(side="left", padx=(0, 6))
-        ttk.Button(g2, text="儲存規格", command=self._save_spec_file, style="Ghost.TButton").pack(side="left", padx=(0, 6))
-        ttk.Button(g2, text="建立 SQLite", command=self._build_demo_database, style="Ghost.TButton").pack(side="left", padx=(0, 6))
-        ttk.Button(g2, text="讀取欄位", command=self._load_sql_output_columns, style="Ghost.TButton").pack(side="left")
+        ttk.Button(g2, text="儲存規格", command=self._save_spec_file, style="Ghost.TButton").pack(side="left")
 
         tk.Frame(toolbar, bg=self.BORDER, width=1).pack(side="left", fill="y", padx=16, pady=6)
 
-        # ── 群組 3：執行 ─────────────────────────────────────────────────
+        # ── 群組 3：資料庫 ───────────────────────────────────────────────
         g3 = ttk.Frame(toolbar, style="App.TFrame")
         g3.pack(side="left")
-        ttk.Button(g3, text="產生合併 SQL", command=self._merge_sql, style="Accent.TButton").pack(side="left", padx=(0, 6))
-        ttk.Button(g3, text="驗證合併 SQL", command=self._validate_merged_sql, style="Warn.TButton").pack(side="left")
+        ttk.Button(g3, text="建立 SQLite", command=self._build_demo_database, style="Ghost.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(g3, text="讀取欄位", command=self._load_sql_output_columns, style="Ghost.TButton").pack(side="left")
+
+        tk.Frame(toolbar, bg=self.BORDER, width=1).pack(side="left", fill="y", padx=16, pady=6)
+
+        # ── 群組 4：執行 ─────────────────────────────────────────────────
+        g4 = ttk.Frame(toolbar, style="App.TFrame")
+        g4.pack(side="left")
+        ttk.Button(g4, text="產生合併 SQL", command=self._merge_sql, style="Accent.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(g4, text="驗證合併 SQL", command=self._validate_merged_sql, style="Warn.TButton").pack(side="left")
 
         notebook = ttk.Notebook(outer, style="App.TNotebook")
         notebook.grid(row=2, column=0, sticky="nsew", pady=(8, 0))
@@ -1486,6 +1499,7 @@ class SqlMergeApp:
         try:
             self._validate_join_columns()
             spec = self._build_spec_from_form()
+            validate_columns_against_schema(spec, self.sql_output_columns)
             merged_sql = merge_sql_files(self.selected_sql_paths, spec)
             output_path = Path(self.output_path_var.get())
             save_merged_sql(output_path, merged_sql)
@@ -1514,6 +1528,61 @@ class SqlMergeApp:
             )
         except Exception as error:  # noqa: BLE001
             messagebox.showerror("驗證失敗", str(error))
+
+    def _save_workspace_file(self) -> None:
+        """將目前工作區狀態儲存為 JSON 快照。"""
+        path = filedialog.asksaveasfilename(
+            title="儲存工作區",
+            filetypes=[("JSON files", "*.json")],
+            defaultextension=".json",
+            initialdir=self.project_root,
+            initialfile="workspace.json",
+        )
+        if not path:
+            return
+        self._capture_join_field_state()
+        self._capture_output_column_state()
+        state = WorkspaceState(
+            selected_sql_paths=[str(p) for p in self.selected_sql_paths],
+            main_sql=self.main_sql_var.get(),
+            output_path=self.output_path_var.get(),
+            db_path=self.db_path_var.get(),
+            join_field_state={k: [list(c) for c in v] for k, v in self.join_field_state.items()},
+            output_column_state={k: list(v) for k, v in self.output_column_state.items()},
+            output_column_order=list(self.output_column_order),
+        )
+        save_workspace(Path(path), state)
+        self.status_var.set(f"已儲存工作區: {path}")
+
+    def _load_workspace_file(self) -> None:
+        """從 JSON 快照還原工作區狀態。"""
+        path = filedialog.askopenfilename(
+            title="載入工作區",
+            filetypes=[("JSON files", "*.json")],
+            initialdir=self.project_root,
+        )
+        if not path:
+            return
+        state = load_workspace(Path(path))
+        self.selected_sql_paths = [Path(p) for p in state.selected_sql_paths]
+        if state.main_sql:
+            self.main_sql_var.set(state.main_sql)
+        if state.output_path:
+            self.output_path_var.set(state.output_path)
+        if state.db_path:
+            self.db_path_var.set(state.db_path)
+        self.join_field_state = {
+            k: [(c[0], c[1]) for c in v]
+            for k, v in state.join_field_state.items()
+        }
+        self.output_column_state = {
+            k: (bool(v[0]), str(v[1]))
+            for k, v in state.output_column_state.items()
+        }
+        self.output_column_order = list(state.output_column_order)
+        self._sync_sql_controls()
+        self._try_auto_load_sql_output_columns()
+        self.status_var.set(f"已載入工作區: {path}")
 
     def _copy_merged_sql(self) -> None:
         """複製合併 SQL 到剪貼簿。"""
