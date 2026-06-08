@@ -32,8 +32,7 @@ def configure_theme(app) -> None:
     style = ttk.Style()
     try:
         style.theme_use("clam")
-    except Exception:
-        # fallback silently if theme is unavailable on platform
+    except tk.TclError:
         pass
 
     style.configure(".", background=app.BG, foreground=app.TEXT, font=default_font)
@@ -138,3 +137,25 @@ def configure_theme(app) -> None:
         padding=(12, 8),
     )
     style.map("Warn.TButton", background=[("active", "#48331d"), ("pressed", "#2e2113")])
+
+    style.configure(
+        "TScrollbar",
+        background=app.SURFACE_ALT,
+        troughcolor=app.INPUT_BG,
+        bordercolor=app.BORDER,
+        arrowcolor=app.MUTED,
+        darkcolor=app.SURFACE_ALT,
+        lightcolor=app.SURFACE_ALT,
+    )
+    style.map(
+        "TScrollbar",
+        background=[("active", app.BORDER), ("pressed", app.ACCENT_DEEP)],
+        arrowcolor=[("active", app.TEXT)],
+    )
+
+    style.configure(
+        "Badge.TLabel",
+        background=app.SURFACE_ALT,
+        foreground=app.MUTED,
+        font=("Consolas", 9),
+    )

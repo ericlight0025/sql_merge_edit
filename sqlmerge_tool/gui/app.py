@@ -49,6 +49,12 @@ class SqlMergeApp:
         self.root.title("SQL Merge Tool")
         self.root.geometry("1240x860")
         self.root.minsize(1120, 760)
+        self.root.update_idletasks()
+        _sw = self.root.winfo_screenwidth()
+        _sh = self.root.winfo_screenheight()
+        self.root.geometry(
+            f"1240x860+{max(0, (_sw - 1240) // 2)}+{max(0, (_sh - 860) // 2)}"
+        )
 
         self.project_root = Path(__file__).resolve().parents[2]
         self.sample_sql_dir = self.project_root / "sample_data" / "sample_sql"
@@ -76,7 +82,6 @@ class SqlMergeApp:
         configure_theme(self)
         self._build_layout()
         self._sync_sql_controls()
-    
 
     def _build_layout(self) -> None:
         """建立 GUI 元件。"""
@@ -85,7 +90,7 @@ class SqlMergeApp:
         outer.columnconfigure(0, weight=1)
         outer.rowconfigure(2, weight=1)
 
-        header = ttk.Frame(outer, style="Header.TFrame", padding=18)
+        header = ttk.Frame(outer, style="Header.TFrame", padding=(18, 16, 18, 0))
         header.grid(row=0, column=0, sticky="ew")
         header.columnconfigure(0, weight=1)
         ttk.Label(header, text="SQL Merge Console", style="Title.TLabel").grid(
@@ -95,63 +100,37 @@ class SqlMergeApp:
         )
         ttk.Label(
             header,
-            text="Dark mode GUI for WITH merge, main-table left join, and SQLite execution validation.",
+            text="SQL WITH 合併 · 主表 LEFT JOIN · SQLite 語法驗證",
             style="Subtitle.TLabel",
         ).grid(row=1, column=0, sticky="w", pady=(6, 0))
+        tk.Frame(header, bg=self.BORDER, height=1).grid(row=2, column=0, sticky="ew", pady=(14, 0))
 
-        toolbar = ttk.Frame(outer, style="App.TFrame", padding=(0, 14, 0, 10))
+        toolbar = ttk.Frame(outer, style="App.TFrame", padding=(0, 12, 0, 8))
         toolbar.grid(row=1, column=0, sticky="ew")
-        for column in range(8):
-            toolbar.columnconfigure(column, weight=1)
 
-        ttk.Button(
-            toolbar,
-            text="載入範例 SQL",
-            command=self._load_sample_bundle,
-            style="Ghost.TButton",
-        ).grid(row=0, column=0, padx=(0, 8), sticky="ew")
-        ttk.Button(
-            toolbar,
-            text="加入 SQL 檔",
-            command=self._select_sql_files,
-            style="Accent.TButton",
-        ).grid(row=0, column=1, padx=8, sticky="ew")
-        ttk.Button(
-            toolbar,
-            text="載入規格 JSON",
-            command=self._load_spec_file,
-            style="Ghost.TButton",
-        ).grid(row=0, column=2, padx=8, sticky="ew")
-        ttk.Button(
-            toolbar,
-            text="儲存規格 JSON",
-            command=self._save_spec_file,
-            style="Ghost.TButton",
-        ).grid(row=0, column=3, padx=8, sticky="ew")
-        ttk.Button(
-            toolbar,
-            text="建立示範 SQLite",
-            command=self._build_demo_database,
-            style="Ghost.TButton",
-        ).grid(row=0, column=4, padx=8, sticky="ew")
-        ttk.Button(
-            toolbar,
-            text="讀取 SQL 欄位",
-            command=self._load_sql_output_columns,
-            style="Ghost.TButton",
-        ).grid(row=0, column=5, padx=8, sticky="ew")
-        ttk.Button(
-            toolbar,
-            text="產生合併 SQL",
-            command=self._merge_sql,
-            style="Accent.TButton",
-        ).grid(row=0, column=6, padx=8, sticky="ew")
-        ttk.Button(
-            toolbar,
-            text="驗證合併 SQL",
-            command=self._validate_merged_sql,
-            style="Warn.TButton",
-        ).grid(row=0, column=7, padx=(8, 0), sticky="ew")
+        # ── 群組 1：SQL 檔案 ─────────────────────────────────────────────
+        g1 = ttk.Frame(toolbar, style="App.TFrame")
+        g1.pack(side="left")
+        ttk.Button(g1, text="載入範例 SQL", command=self._load_sample_bundle, style="Ghost.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(g1, text="加入 SQL 檔", command=self._select_sql_files, style="Accent.TButton").pack(side="left")
+
+        tk.Frame(toolbar, bg=self.BORDER, width=1).pack(side="left", fill="y", padx=16, pady=6)
+
+        # ── 群組 2：規格 / 資料庫 ────────────────────────────────────────
+        g2 = ttk.Frame(toolbar, style="App.TFrame")
+        g2.pack(side="left")
+        ttk.Button(g2, text="載入規格", command=self._load_spec_file, style="Ghost.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(g2, text="儲存規格", command=self._save_spec_file, style="Ghost.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(g2, text="建立 SQLite", command=self._build_demo_database, style="Ghost.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(g2, text="讀取欄位", command=self._load_sql_output_columns, style="Ghost.TButton").pack(side="left")
+
+        tk.Frame(toolbar, bg=self.BORDER, width=1).pack(side="left", fill="y", padx=16, pady=6)
+
+        # ── 群組 3：執行 ─────────────────────────────────────────────────
+        g3 = ttk.Frame(toolbar, style="App.TFrame")
+        g3.pack(side="left")
+        ttk.Button(g3, text="產生合併 SQL", command=self._merge_sql, style="Accent.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(g3, text="驗證合併 SQL", command=self._validate_merged_sql, style="Warn.TButton").pack(side="left")
 
         notebook = ttk.Notebook(outer, style="App.TNotebook")
         notebook.grid(row=2, column=0, sticky="nsew", pady=(8, 0))
@@ -471,7 +450,16 @@ class SqlMergeApp:
         result_card["frame"].rowconfigure(1, weight=1)
         result_body = result_card["body"]
         result_body.columnconfigure(0, weight=1)
-        result_body.rowconfigure(0, weight=1)
+        result_body.rowconfigure(1, weight=1)
+
+        copy_bar = ttk.Frame(result_body, style="Panel.TFrame")
+        copy_bar.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        ttk.Button(
+            copy_bar,
+            text="複製 SQL",
+            command=self._copy_merged_sql,
+            style="Ghost.TButton",
+        ).pack(side="right")
 
         editor_frame = tk.Frame(
             result_body,
@@ -480,7 +468,7 @@ class SqlMergeApp:
             highlightthickness=1,
             bd=0,
         )
-        editor_frame.grid(row=0, column=0, sticky="nsew")
+        editor_frame.grid(row=1, column=0, sticky="nsew")
         editor_frame.grid_columnconfigure(0, weight=1)
         editor_frame.grid_rowconfigure(0, weight=1)
 
@@ -527,12 +515,17 @@ class SqlMergeApp:
         )
 
         status_bar = ttk.Frame(outer, style="Header.TFrame", padding=(14, 10))
-        status_bar.grid(row=3, column=0, sticky="ew", pady=(12, 0))
+        status_bar.grid(row=3, column=0, sticky="ew", pady=(8, 0))
         status_bar.columnconfigure(0, weight=1)
         ttk.Label(status_bar, textvariable=self.status_var, style="Status.TLabel").grid(
             row=0,
             column=0,
             sticky="w",
+        )
+        ttk.Label(status_bar, text="SQL Merge Tool", style="Badge.TLabel").grid(
+            row=0,
+            column=1,
+            sticky="e",
         )
 
     def _create_card(
@@ -1521,6 +1514,16 @@ class SqlMergeApp:
             )
         except Exception as error:  # noqa: BLE001
             messagebox.showerror("驗證失敗", str(error))
+
+    def _copy_merged_sql(self) -> None:
+        """複製合併 SQL 到剪貼簿。"""
+        sql = self.result_text.get("1.0", tk.END).strip()
+        if sql:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(sql)
+            self.status_var.set("已複製合併 SQL 到剪貼簿。")
+        else:
+            self.status_var.set("尚未產生合併 SQL，請先執行產生。")
 
 
 def launch_app() -> None:
