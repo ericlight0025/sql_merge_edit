@@ -1,0 +1,47 @@
+{
+  "name": "vscode-rg-anywhere",
+  "displayName": "RG Anywhere",
+  "description": "ripgrep search across any folder, not limited to workspace",
+  "version": "0.1.0",
+  "publisher": "ericlight0025",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "keywords": ["ripgrep", "search", "grep", "find"],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "rgAnywhere.open",
+        "title": "RG Anywhere: Open Search Panel",
+        "category": "RG Anywhere"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "rgAnywhere.open",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "rgAnywhere.open" }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "dependencies": {
+    "@vscode/ripgrep": "^1.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}

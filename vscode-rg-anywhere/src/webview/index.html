@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';" />
+  <title>RG Anywhere</title>
+  <style>/* INLINE_CSS */</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Sidebar ── -->
+  <aside id="sidebar">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-target="tab-search">Search</button>
+      <button class="tab-btn" data-target="tab-settings">Settings</button>
+    </div>
+
+    <!-- Search tab -->
+    <div id="tab-search" class="tab-pane active">
+      <div class="search-form">
+        <div class="query-row">
+          <input id="query" type="text" placeholder="Search pattern…" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="toggles">
+          <button id="toggle-case"  class="toggle-btn" title="Case sensitive">Aa</button>
+          <button id="toggle-regex" class="toggle-btn" title="Use regex">.*</button>
+          <button id="toggle-recur" class="toggle-btn" title="Recursive">⤵ Recursive</button>
+        </div>
+        <div class="glob-row">
+          <input id="include-glob" type="text" placeholder="Include glob (e.g. *.ts)" title="Include glob" />
+          <input id="exclude-glob" type="text" placeholder="Exclude glob (e.g. node_modules)" title="Exclude glob" />
+        </div>
+        <button id="btn-search" class="btn-search">Search</button>
+      </div>
+
+      <div class="folder-header">
+        <span>Folders</span>
+        <button id="btn-add-folder" class="btn-add-folder">+ Add</button>
+      </div>
+      <div id="folder-list"></div>
+    </div>
+
+    <!-- Settings tab -->
+    <div id="tab-settings" class="tab-pane">
+      <div class="settings-form">
+        <div class="setting-group">
+          <label class="setting-label">Default include glob</label>
+          <input type="text" id="pref-include" placeholder="e.g. *.{ts,js,py}" />
+        </div>
+        <div class="setting-group">
+          <label class="setting-label">Default exclude glob</label>
+          <input type="text" id="pref-exclude" placeholder="e.g. node_modules,dist" />
+        </div>
+        <div class="setting-group">
+          <label class="setting-label">Default sort</label>
+          <select id="pref-sort">
+            <option value="hits-desc">Hits ↓</option>
+            <option value="hits-asc">Hits ↑</option>
+            <option value="name-asc">Name A→Z</option>
+            <option value="name-desc">Name Z→A</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Results pane ── -->
+  <section id="results-pane">
+    <div id="results-header">
+      <span id="spinner" class="spinner" style="display:none;"></span>
+      <span id="status-text">Ready</span>
+      <select id="sort-select">
+        <option value="hits-desc">Hits ↓</option>
+        <option value="hits-asc">Hits ↑</option>
+        <option value="name-asc">Name A→Z</option>
+        <option value="name-desc">Name Z→A</option>
+      </select>
+    </div>
+    <div class="filter-bar">
+      <input id="filter-name" type="text" placeholder="Filter filename…" title="Filter by filename keyword" />
+      <input id="filter-ext"  type="text" placeholder=".ext" title="Filter by extension" class="narrow" />
+      <input id="filter-min-hits" type="number" min="0" placeholder="≥ hits" title="Minimum hit count" class="narrow" style="width:64px;" />
+    </div>
+    <div id="file-list">
+      <div class="placeholder">Run a search to see results</div>
+    </div>
+  </section>
+
+  <!-- ── Preview pane ── -->
+  <section id="preview-pane">
+    <div id="preview-header">
+      <span id="preview-filepath"></span>
+      <button id="btn-prev" class="nav-btn" disabled title="Previous hit">↑ Prev</button>
+      <button id="btn-next" class="nav-btn" disabled title="Next hit">↓ Next</button>
+      <button id="btn-open" class="btn-open" disabled title="Open in editor">Open</button>
+    </div>
+    <div id="preview-code">
+      <div class="placeholder">Select a file to preview</div>
+    </div>
+  </section>
+
+</div>
+<script>/* INLINE_JS */</script>
+</body>
+</html>
