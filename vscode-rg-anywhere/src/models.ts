@@ -26,19 +26,14 @@ export interface SearchFileResult {
   hitCount: number;
 }
 
-export interface FilterOptions {
-  filenameKeyword: string;
-  extensionFilter: string;
-  minHits: number;
+export interface UserSettings {
+  defaultIncludeGlob: string;
+  defaultExcludeGlob: string;
+  defaultSort: string;
 }
 
 export type SortField = 'hitCount' | 'filename';
 export type SortDir = 'asc' | 'desc';
-
-export interface SortOptions {
-  field: SortField;
-  dir: SortDir;
-}
 
 // Messages from webview → extension
 export type WebviewMessage =
@@ -47,7 +42,8 @@ export type WebviewMessage =
   | { type: 'removeFolder'; folder: string }
   | { type: 'openFile'; filePath: string; lineNumber: number }
   | { type: 'revealFile'; filePath: string }
-  | { type: 'cancelSearch' };
+  | { type: 'cancelSearch' }
+  | { type: 'saveSettings'; settings: UserSettings };
 
 // Messages from extension → webview
 export type ExtensionMessage =
@@ -56,4 +52,5 @@ export type ExtensionMessage =
   | { type: 'searchResult'; result: SearchFileResult }
   | { type: 'searchDone'; totalFiles: number; totalHits: number }
   | { type: 'searchError'; message: string }
-  | { type: 'searchCancelled' };
+  | { type: 'searchCancelled' }
+  | { type: 'init'; settings: UserSettings; folders: string[] };

@@ -2,12 +2,15 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { SearchService } from './SearchService';
-import { WebviewMessage, ExtensionMessage, SearchOptions } from './models';
+import { WebviewMessage, ExtensionMessage, SearchOptions, UserSettings } from './models';
 
 const DANGEROUS_EXTENSIONS = new Set([
   '.exe', '.bat', '.cmd', '.com', '.sh', '.bash', '.zsh', '.ps1',
   '.msi', '.dmg', '.pkg', '.deb', '.rpm', '.AppImage',
 ]);
+
+const CFG = 'rgAnywhere';
+const FOLDERS_KEY = 'savedFolders';
 
 export class SearchPanel {
   static readonly viewType = 'rgAnywhere.searchPanel';
@@ -15,10 +18,11 @@ export class SearchPanel {
 
   private readonly panel: vscode.WebviewPanel;
   private readonly service: SearchService;
+  private readonly context: vscode.ExtensionContext;
   private folders: string[] = [];
   private disposables: vscode.Disposable[] = [];
 
-  static createOrShow(extensionUri: vscode.Uri) {
+  static createOrShow(context: vscode.ExtensionContext) {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -39,12 +43,14 @@ export class SearchPanel {
       }
     );
 
-    SearchPanel.instance = new SearchPanel(panel);
+    SearchPanel.instance = new SearchPanel(panel, context);
   }
 
-  private constructor(panel: vscode.WebviewPanel) {
+  private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
     this.panel = panel;
+    this.context = context;
     this.service = new SearchService();
+    this.folders = context.globalState.get<string[]>(FOLDERS_KEY) ?? [];
 
     this.panel.webview.html = this.getHtml();
 
@@ -55,6 +61,19 @@ export class SearchPanel {
     );
 
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
+
+    // Send persisted state once the webview is ready (slight delay to let JS load)
+    setTimeout(() => this.sendInit(), 100);
+  }
+
+  private sendInit() {
+    const cfg = vscode.workspace.getConfiguration(CFG);
+    const settings: UserSettings = {
+      defaultIncludeGlob: cfg.get<string>('defaultIncludeGlob') ?? '',
+      defaultExcludeGlob: cfg.get<string>('defaultExcludeGlob') ?? '',
+      defaultSort: cfg.get<string>('defaultSort') ?? 'hits-desc',
+    };
+    this.post({ type: 'init', settings, folders: this.folders });
   }
 
   private async handleMessage(msg: WebviewMessage) {
@@ -75,6 +94,7 @@ export class SearchPanel {
             const f = uri.fsPath;
             if (!this.folders.includes(f)) {
               this.folders.push(f);
+              this.persistFolders();
               this.post({ type: 'folderAdded', folder: f });
             }
           }
@@ -84,6 +104,7 @@ export class SearchPanel {
 
       case 'removeFolder':
         this.folders = this.folders.filter(f => f !== msg.folder);
+        this.persistFolders();
         break;
 
       case 'openFile': {
@@ -110,7 +131,19 @@ export class SearchPanel {
         this.service.cancel();
         this.post({ type: 'searchCancelled' });
         break;
+
+      case 'saveSettings': {
+        const cfg = vscode.workspace.getConfiguration(CFG);
+        await cfg.update('defaultIncludeGlob', msg.settings.defaultIncludeGlob, vscode.ConfigurationTarget.Global);
+        await cfg.update('defaultExcludeGlob', msg.settings.defaultExcludeGlob, vscode.ConfigurationTarget.Global);
+        await cfg.update('defaultSort', msg.settings.defaultSort, vscode.ConfigurationTarget.Global);
+        break;
+      }
     }
+  }
+
+  private persistFolders() {
+    this.context.globalState.update(FOLDERS_KEY, this.folders);
   }
 
   private runSearch(opts: SearchOptions) {
@@ -129,19 +162,12 @@ export class SearchPanel {
 
   private getHtml(): string {
     const webviewDir = path.join(__dirname, 'webview');
-    const htmlPath = path.join(webviewDir, 'index.html');
-    const cssPath = path.join(webviewDir, 'style.css');
-    const jsPath = path.join(webviewDir, 'main.js');
-
-    let html = fs.readFileSync(htmlPath, 'utf8');
-    const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '';
-    const js = fs.existsSync(jsPath) ? fs.readFileSync(jsPath, 'utf8') : '';
-
-    // Inline CSS and JS to avoid CSP issues with local file URIs
-    html = html
+    let html = fs.readFileSync(path.join(webviewDir, 'index.html'), 'utf8');
+    const css = fs.readFileSync(path.join(webviewDir, 'style.css'), 'utf8');
+    const js  = fs.readFileSync(path.join(webviewDir, 'main.js'),   'utf8');
+    return html
       .replace('/* INLINE_CSS */', css)
       .replace('/* INLINE_JS */', js);
-    return html;
   }
 
   dispose() {

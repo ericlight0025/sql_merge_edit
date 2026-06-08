@@ -24,15 +24,37 @@
         "mac": "cmd+alt+r"
       }
     ],
-    "menus": {
-      "commandPalette": [
-        { "command": "rgAnywhere.open" }
-      ]
+    "configuration": {
+      "title": "RG Anywhere",
+      "properties": {
+        "rgAnywhere.defaultIncludeGlob": {
+          "type": "string",
+          "default": "",
+          "description": "Default include glob pattern (e.g. *.{ts,js,py})"
+        },
+        "rgAnywhere.defaultExcludeGlob": {
+          "type": "string",
+          "default": "",
+          "description": "Default exclude glob pattern (e.g. node_modules,dist)"
+        },
+        "rgAnywhere.defaultSort": {
+          "type": "string",
+          "default": "hits-desc",
+          "enum": ["hits-desc", "hits-asc", "name-asc", "name-desc"],
+          "enumDescriptions": [
+            "Hits descending",
+            "Hits ascending",
+            "Filename A→Z",
+            "Filename Z→A"
+          ],
+          "description": "Default sort order for search results"
+        }
+      }
     }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && node scripts/copy-webview.js",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts"
   },

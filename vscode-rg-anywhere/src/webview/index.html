@@ -21,17 +21,15 @@
     <!-- Search tab -->
     <div id="tab-search" class="tab-pane active">
       <div class="search-form">
-        <div class="query-row">
-          <input id="query" type="text" placeholder="Search pattern…" autocomplete="off" spellcheck="false" />
-        </div>
+        <input id="query" type="text" placeholder="Search pattern…" autocomplete="off" spellcheck="false" />
         <div class="toggles">
           <button id="toggle-case"  class="toggle-btn" title="Case sensitive">Aa</button>
           <button id="toggle-regex" class="toggle-btn" title="Use regex">.*</button>
           <button id="toggle-recur" class="toggle-btn" title="Recursive">⤵ Recursive</button>
         </div>
         <div class="glob-row">
-          <input id="include-glob" type="text" placeholder="Include glob (e.g. *.ts)" title="Include glob" />
-          <input id="exclude-glob" type="text" placeholder="Exclude glob (e.g. node_modules)" title="Exclude glob" />
+          <input id="include-glob" type="text" placeholder="Include (e.g. *.ts)" />
+          <input id="exclude-glob" type="text" placeholder="Exclude (e.g. node_modules)" />
         </div>
         <button id="btn-search" class="btn-search">Search</button>
       </div>
@@ -47,15 +45,15 @@
     <div id="tab-settings" class="tab-pane">
       <div class="settings-form">
         <div class="setting-group">
-          <label class="setting-label">Default include glob</label>
+          <label class="setting-label" for="pref-include">Default include glob</label>
           <input type="text" id="pref-include" placeholder="e.g. *.{ts,js,py}" />
         </div>
         <div class="setting-group">
-          <label class="setting-label">Default exclude glob</label>
+          <label class="setting-label" for="pref-exclude">Default exclude glob</label>
           <input type="text" id="pref-exclude" placeholder="e.g. node_modules,dist" />
         </div>
         <div class="setting-group">
-          <label class="setting-label">Default sort</label>
+          <label class="setting-label" for="pref-sort">Default sort</label>
           <select id="pref-sort">
             <option value="hits-desc">Hits ↓</option>
             <option value="hits-asc">Hits ↑</option>
@@ -64,6 +62,7 @@
           </select>
         </div>
       </div>
+      <p class="settings-note">Changes are saved automatically to VS Code settings (global scope).</p>
     </div>
   </aside>
 
@@ -80,9 +79,9 @@
       </select>
     </div>
     <div class="filter-bar">
-      <input id="filter-name" type="text" placeholder="Filter filename…" title="Filter by filename keyword" />
-      <input id="filter-ext"  type="text" placeholder=".ext" title="Filter by extension" class="narrow" />
-      <input id="filter-min-hits" type="number" min="0" placeholder="≥ hits" title="Minimum hit count" class="narrow" style="width:64px;" />
+      <input id="filter-name" type="text" placeholder="Filter filename…" />
+      <input id="filter-ext"  type="text" placeholder=".ext" class="narrow" />
+      <input id="filter-min-hits" type="number" min="0" placeholder="≥" title="Min hits" class="narrow" style="width:56px;" />
     </div>
     <div id="file-list">
       <div class="placeholder">Run a search to see results</div>
@@ -93,9 +92,9 @@
   <section id="preview-pane">
     <div id="preview-header">
       <span id="preview-filepath"></span>
-      <button id="btn-prev" class="nav-btn" disabled title="Previous hit">↑ Prev</button>
-      <button id="btn-next" class="nav-btn" disabled title="Next hit">↓ Next</button>
-      <button id="btn-open" class="btn-open" disabled title="Open in editor">Open</button>
+      <button id="btn-prev" class="nav-btn" disabled>↑ Prev</button>
+      <button id="btn-next" class="nav-btn" disabled>↓ Next</button>
+      <button id="btn-open" class="btn-open" disabled>Open</button>
     </div>
     <div id="preview-code">
       <div class="placeholder">Select a file to preview</div>
