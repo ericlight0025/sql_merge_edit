@@ -38,6 +38,8 @@ flowchart TD
 
 ## 模組架構
 
+![Architecture Diagram](assets/architecture.svg)
+
 ```mermaid
 graph LR
     main([main.py\nGUI 入口]) --> app
