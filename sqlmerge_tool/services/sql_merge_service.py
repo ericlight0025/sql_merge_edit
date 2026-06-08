@@ -6,9 +6,7 @@ import re
 from pathlib import Path
 
 from sqlmerge_tool.models import CteDefinition, MergeSpec, OutputColumnSpec, ParsedSqlModule
-from sqlmerge_tool.services.validation_service import validate_merge_spec
-from sqlmerge_tool.services.validation_service import validate_sql_syntax_sqlglot, SqlValidationError
-from sqlmerge_tool.services.validation_service import validate_sql_syntax_sqlglot
+from sqlmerge_tool.services.validation_service import SqlValidationError, validate_merge_spec, validate_sql_syntax_sqlglot
 
 
 _IDENTIFIER_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
@@ -187,7 +185,14 @@ def replace_identifiers(sql_text: str, mapping: dict[str, str]) -> str:
 
     # Pattern matches: single-quoted strings, double-quoted strings,
     # line comments (--...), and block comments (/* ... */).
-    token_re = re.compile(r"('(?:''|[^'])*')|\"(?:\"\"|[^\"])*\"|(--[^\n]*\n?)|(/\*.*?\*/)", re.S)
+    token_re = re.compile(
+        r"('(?:''|[^'])*')"
+        r'|("(?:""|[^"])*")'
+        r"|(`[^`]*`)"
+        r"|(--[^\n]*\n?)"
+        r"|(/\*.*?\*/)",
+        re.S,
+    )
 
     def replace_in_chunk(chunk: str) -> str:
         # replace identifiers in a chunk of SQL that's not a string/comment

@@ -10,7 +10,7 @@ from sqlmerge_tool.models import JoinCondition, JoinSpec, MergeSpec, OutputColum
 try:
     import sqlglot
     from sqlglot.errors import ParseError
-except Exception:  # pragma: no cover - optional dependency
+except ImportError:  # pragma: no cover - optional dependency
     sqlglot = None
     ParseError = Exception
 
@@ -123,18 +123,58 @@ def validate_merge_spec(spec: MergeSpec, sql_paths: list[Path]) -> None:
     if spec.output_columns:
         if not any(column.enabled for column in spec.output_columns):
             raise ValueError("至少要勾選一個最終輸出欄位。")
+        for column in spec.output_columns:
+            if column.source_sql not in file_names:
+                raise ValueError(f"輸出欄位來源 SQL 不在已選檔案內: {column.source_sql}")
+            if not column.column_name.strip():
+                raise ValueError("輸出欄位名稱不可為空白。")
 
-    for column in spec.output_columns:
-        if column.source_sql not in file_names:
-            raise ValueError(f"輸出欄位來源 SQL 不在已選檔案內: {column.source_sql}")
-        if not column.column_name.strip():
-            raise ValueError("輸出欄位名稱不可為空白。")
+
+def validate_columns_against_schema(
+    spec: MergeSpec,
+    sql_output_columns: dict[str, list[str]],
+) -> None:
+    """合併前欄位存在檢查：確認 join key 與輸出欄位都存在於對應 SQL 的輸出欄位清單。
+
+    若 sql_output_columns 為空（尚未讀取欄位），則略過此檢查。
+    """
+    if not sql_output_columns:
+        return
+
+    main_cols = set(sql_output_columns.get(spec.main_sql, []))
+
+    for join in spec.joins:
+        join_cols = set(sql_output_columns.get(join.sql_file, []))
+        for condition in join.conditions:
+            mc = condition.main_column.strip()
+            oc = condition.other_column.strip()
+            if mc and main_cols and mc not in main_cols:
+                raise ValueError(
+                    f"Join 設定錯誤：主 SQL「{spec.main_sql}」沒有欄位「{mc}」，"
+                    f"請檢查 {join.sql_file} 的 join 條件。"
+                )
+            if oc and join_cols and oc not in join_cols:
+                raise ValueError(
+                    f"Join 設定錯誤：「{join.sql_file}」沒有欄位「{oc}」，"
+                    f"請確認欄位名稱是否正確。"
+                )
+
+    if spec.output_columns:
+        for column in spec.output_columns:
+            if not column.enabled:
+                continue
+            source_cols = set(sql_output_columns.get(column.source_sql, []))
+            if source_cols and column.column_name not in source_cols:
+                raise ValueError(
+                    f"輸出欄位錯誤：「{column.source_sql}」沒有欄位「{column.column_name}」，"
+                    f"請重新讀取 SQL 欄位或確認設定。"
+                )
 
 
 def validate_sql_syntax_sqlglot(sql_text: str) -> None:
     """Use sqlglot to validate merged SQL syntax for SQLite dialect.
 
-    Raises a ValueError with the parse error message when parsing fails.
+    Raises SqlValidationError when parsing fails.
     If sqlglot is not installed, this is a no-op.
     """
     if sqlglot is None:
