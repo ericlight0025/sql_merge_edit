@@ -6,6 +6,7 @@
   "publisher": "ericlight0025",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other"],
+  "license": "Polyform-Noncommercial-1.0.0",
   "keywords": ["ripgrep", "search", "grep", "find"],
   "activationEvents": [],
   "main": "./out/extension.js",

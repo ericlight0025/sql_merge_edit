@@ -93,4 +93,5 @@ vsce package
 
 ## License
 
-MIT
+[Polyform Noncommercial 1.0.0](LICENSE) — free for personal and non-commercial use;
+commercial use (including SaaS, paid products, or in-business tooling) is not permitted.
